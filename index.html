@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DarkBoy CC Checker v2.0</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #58a6ff;
+            --bg-dark: #0d1117;
+            --card-bg: #161b22;
+            --text-light: #f0f6fc;
+            --text-secondary: #8b949e;
+            --success: #238636;
+            --danger: #da3633;
+            --warning: #bf8700;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid #21262d;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #21262d;
+        }
+        
+        .card h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+        
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-dark);
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            color: var(--text-light);
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .terminal {
+            background: var(--bg-dark);
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #21262d;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #21262d;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .telegram-section {
+            margin-bottom: 30px;
+        }
+        
+        .telegram-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .results-section {
+            margin-top: 30px;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .result-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .result-approved {
+            background: rgba(35, 134, 54, 0.1);
+            border-color: var(--success);
+        }
+        
+        .result-declined {
+            background: rgba(218, 54, 51, 0.1);
+            border-color: var(--danger);
+        }
+        
+        .result-charged {
+            background: rgba(88, 166, 255, 0.1);
+            border-color: var(--primary-color);
+        }
+        
+        .results-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #21262d;
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .telegram-grid {
+                grid-template-columns: 1fr;
+            }
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-rocket"></i> DarkBoy CC Checker v2.0</h1>
+            <p>Professional Credit Card Validation Tool - Web Edition</p>
+        </div>
+
+        <!-- Telegram Settings -->
+        <div class="telegram-section">
+            <div class="card">
+                <h3><i class="fab fa-telegram"></i> Telegram Notifications</h3>
+                <div class="telegram-grid">
+                    <div class="input-group">
+                        <label><i class="fas fa-robot"></i> Bot Token</label>
+                        <input type="password" id="botToken" placeholder="Enter your bot token">
+                        <small class="status-text">Get from @BotFather on Telegram</small>
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-id-card"></i> Chat ID</label>
+                        <input type="text" id="chatId" placeholder="Enter your chat ID">
+                        <small class="status-text">Get from @userinfobot on Telegram</small>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="saveTelegramSettings()">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                    <button class="btn btn-secondary" onclick="testTelegramConnection()">
+                        <i class="fas fa-paper-plane"></i> Test Connection
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Processing Area -->
+        <div class="main-grid">
+            <!-- Left Panel - Input -->
+            <div>
+                <div class="card">
+                    <h3><i class="fas fa-credit-card"></i> Credit Cards</h3>
+                    <div class="input-group">
+                        <label>Format: 4111111111111111|MM|YYYY|CVV (one per line)</label>
+                        <textarea id="ccInput" placeholder="4168440054476542|08|27|908
+4111111111111111|12|2025|123
+5555555555554444|01|2026|456" rows="15"></textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="startBtn" onclick="startProcessing()">
+                            <i class="fas fa-play"></i> Start Processing
+                        </button>
+                        <button class="btn btn-danger" id="stopBtn" onclick="stopProcessing()" disabled>
+                            <i class="fas fa-stop"></i> Stop Processing
+                        </button>
+                    </div>
+                    <div class="btn-group" style="margin-top: 10px;">
+                        <button class="btn btn-secondary" onclick="loadCCFile()">
+                            <i class="fas fa-folder-open"></i> Load File
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearInput()">
+                            <i class="fas fa-trash"></i> Clear All
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Terminal and Progress -->
+            <div>
+                <div class="card">
+                    <h3><i class="fas fa-terminal"></i> Real-time Terminal</h3>
+                    <div id="terminal" class="terminal"></div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <div id="progressText" class="status-text">Ready to start - 0 / 0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="card">
+            <h3><i class="fas fa-chart-bar"></i> Live Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalStat">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--success);" id="approvedStat">0</div>
+                    <div class="stat-label">Approved</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--primary-color);" id="chargedStat">0</div>
+                    <div class="stat-label">Charged</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--danger);" id="declinedStat">0</div>
+                    <div class="stat-label">Declined</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--warning);" id="errorStat">0</div>
+                    <div class="stat-label">Errors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--primary-color);" id="rateStat">0%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-section">
+            <div class="results-grid">
+                <div class="card">
+                    <h3 style="color: var(--success);">
+                        <i class="fas fa-check-circle"></i> 
+                        Approved Cards (<span id="approvedCount">0</span>)
+                        <button class="btn btn-secondary" style="margin-left: auto;" onclick="copyResults('approved')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </h3>
+                    <div id="approvedResults" class="results-container"></div>
+                </div>
+                
+                <div class="card">
+                    <h3 style="color: var(--danger);">
+                        <i class="fas fa-times-circle"></i> 
+                        Declined Cards (<span id="declinedCount">0</span>)
+                        <button class="btn btn-secondary" style="margin-left: auto;" onclick="copyResults('declined')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </h3>
+                    <div id="declinedResults" class="results-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="fileInput" accept=".txt,.csv" style="display: none;" onchange="handleFileLoad(event)">
+
+    <script src="script.js"></script>
+</body>
+</html>
