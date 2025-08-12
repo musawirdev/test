@@ -129,7 +129,7 @@ async function processCreditCards(ccList) {
         
         try {
             // Call PHP proxy
-            const response = await fetch('proxy.php', {
+            const response = await fetch('/api/proxy.js', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
