@@ -119,6 +119,8 @@ function stopProcessing() {
     addTerminalMessage('⏹️ Processing stopped by user', 'warning');
 }
 
+// Update the processCreditCards function to use the new Vercel API endpoint
+
 async function processCreditCards(ccList) {
     for (let i = 0; i < ccList.length && isProcessing; i++) {
         const cc = ccList[i].trim();
@@ -128,8 +130,8 @@ async function processCreditCards(ccList) {
         addTerminalMessage(`🔄 Processing: ${cc}`, 'processing');
         
         try {
-            // Call PHP proxy
-            const response = await fetch('/api/proxy.js', {
+            // Call Vercel API proxy instead of PHP
+            const response = await fetch('/api/proxy', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -141,13 +143,15 @@ async function processCreditCards(ccList) {
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP Error: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
             
             const result = await response.json();
             processApiResponse(cc, result);
             
         } catch (error) {
+            console.error('Request failed:', error);
             handleError(cc, error.message);
         }
         
