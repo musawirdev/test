@@ -214,6 +214,8 @@ function processApiResponse(cc, result) {
     
     // Send Telegram notification for approved cards
     if (isSuccess && botToken && chatId) {
+        // Update the processCreditCards function
+async function processCreditCards(ccList) {
     for (let i = 0; i < ccList.length && isProcessing; i++) {
         const cc = ccList[i].trim();
         if (!cc) continue;
@@ -278,7 +280,9 @@ function processApiResponse(cc, result) {
     if (isProcessing) {
         processingComplete();
     }
+    
 }
+processCreditCards()
 
 // Remove the old sendTelegramNotification function since it's now handled server-side
 // Just keep the processApiResponse function as is, but remove any client-side Telegram calls
