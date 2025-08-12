@@ -214,8 +214,6 @@ function processApiResponse(cc, result) {
     
     // Send Telegram notification for approved cards
     if (isSuccess && botToken && chatId) {
-        // Update the processCreditCards function
-async function processCreditCards(ccList) {
     for (let i = 0; i < ccList.length && isProcessing; i++) {
         const cc = ccList[i].trim();
         if (!cc) continue;
@@ -225,7 +223,7 @@ async function processCreditCards(ccList) {
         
         try {
             // Call Vercel API proxy with user's Telegram credentials
-            const response = await fetch('/api/proxy', {
+            const response = fetch('/api/proxy', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -239,11 +237,11 @@ async function processCreditCards(ccList) {
             });
             
             if (!response.ok) {
-                const errorText = await response.text();
+                const errorText = response.text();
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
             
-            const result = await response.json();
+            const result = response.json();
             
             // Log Telegram notification results
             if (result.telegram_notifications) {
@@ -273,7 +271,7 @@ async function processCreditCards(ccList) {
         
         // Delay between requests
         if (isProcessing) {
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            new Promise(resolve => setTimeout(resolve, 1500));
         }
     }
     
@@ -282,12 +280,10 @@ async function processCreditCards(ccList) {
     }
     
 }
-processCreditCards()
 
 // Remove the old sendTelegramNotification function since it's now handled server-side
 // Just keep the processApiResponse function as is, but remove any client-side Telegram calls
     }
-}
 
 function handleError(cc, errorMsg) {
     stats.total++;
