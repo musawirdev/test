@@ -208,7 +208,8 @@ function processApiResponse(cc, result) {
     
     const declineKeywords = [
         'declined', 'failed', 'error', 'invalid', 'insufficient funds',
-        'expired', 'blocked', 'denied', 'rejected', 'card_declined', 'incorrect_cvv', 'incorrect'
+        'expired', 'blocked', 'denied', 'rejected', 'card_declined', 'incorrect_cvv', 'incorrect',
+        'security code', "Your card's security code is incorrect"
     ];
     
     let category = 'declined';
