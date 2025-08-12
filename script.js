@@ -208,7 +208,7 @@ function processApiResponse(cc, result) {
     
     const declineKeywords = [
         'declined', 'failed', 'error', 'invalid', 'insufficient funds',
-        'expired', 'blocked', 'denied', 'rejected', 'card_declined'
+        'expired', 'blocked', 'denied', 'rejected', 'card_declined', 'incorrect_cvv', 'incorrect'
     ];
     
     let category = 'declined';
@@ -222,8 +222,10 @@ function processApiResponse(cc, result) {
         category = 'approved';
         stats.approved++;
         isSuccess = true;
-    } else {
+    } else (declineKeywords.some(keyword => responseLower.includes(keyword))) {
+        category = 'declined';
         stats.declined++;
+        isSuccess = false;
     }
     
     // Log result
