@@ -168,43 +168,208 @@ async function processCreditCards(ccList) {
     }
 }
 
+// Updated processApiResponse function to handle all responses properly
 function processApiResponse(cc, result) {
     stats.total++;
-    const responseMessage = result.message || result.response || result.error || 'Unknown response';
-    const responseLower = responseMessage.toLowerCase();
     
-    // Enhanced approval detection
-    const approvalKeywords = [
-        'success', 'approved', 'succeeded', 'thank you', 'payment successful',
-        'transaction approved', 'charge created', 'payment processed', 'completed'
-    ];
+    // Get response message and status
+    const responseMessage = result.response || result.message || result.error || 'Unknown response';
+    const status = (result.status || '').toLowerCase();
     
-    const chargedKeywords = [
-        'charged', 'payment charged', 'charge successful', 'transaction charged'
-    ];
+    console.log('Processing result:', { cc: cc.substring(0,4) + '****', status, response: responseMessage });
     
-    const declineKeywords = [
-        'declined', 'failed', 'error', 'invalid', 'insufficient funds',
-        'expired', 'blocked', 'denied', 'rejected', 'card_declined'
-    ];
-    
-    let category = 'declined';
+    // Categorize the response
+    const category = categorizeResponseNew(result);
     let isSuccess = false;
     
-    if (chargedKeywords.some(keyword => responseLower.includes(keyword))) {
-        category = 'charged';
-        stats.charged++;
-        isSuccess = true;
-    } else if (approvalKeywords.some(keyword => responseLower.includes(keyword))) {
-        category = 'approved';
-        stats.approved++;
-        isSuccess = true;
-    } else {
-        stats.declined++;
+    // Update stats based on category
+    switch (category) {
+        case 'charged':
+            stats.charged++;
+            isSuccess = true;
+            break;
+        case 'approved':
+            stats.approved++;
+            isSuccess = true;
+            break;
+        case 'threed':
+            stats.threed++;
+            isSuccess = true;
+            break;
+        case 'declined':
+        default:
+            stats.declined++;
+            isSuccess = false;
+            break;
     }
     
+    // Log result to terminal with proper formatting
+    const emoji = getEmojiForCategory(category);
+    const categoryText = category.toUpperCase();
+    const statusText = result.status ? ` (${result.status})` : '';
+    
+    addTerminalMessage(
+        `${emoji} ${categoryText}${statusText}: ${cc} - ${responseMessage}`, 
+        isSuccess ? 'success' : 'error'
+    );
+    
+    // Add to appropriate results section
+    addResultNew(cc, responseMessage, category, result.status, isSuccess);
+    
+    // Log Telegram notifications if any
+    if (result.telegram_notifications) {
+        const { user, server } = result.telegram_notifications;
+        
+        if (user.sent) {
+            addTerminalMessage('📱 User Telegram notification sent', 'success');
+        } else if (user.error) {
+            addTerminalMessage(`📱 User notification failed: ${user.error}`, 'warning');
+        }
+        
+        if (server.sent) {
+            addTerminalMessage('🔧 Server Telegram notification sent', 'success');
+        } else if (server.error) {
+            addTerminalMessage(`🔧 Server notification failed: ${server.error}`, 'warning');
+        }
+    }
+}
+
+// New categorization function that handles the API response format
+function categorizeResponseNew(result) {
+    if (!result) return 'declined';
+    
+    const status = (result.status || '').toLowerCase();
+    const message = (result.response || result.message || '').toLowerCase();
+    
+    // Check status field first
+    if (status === 'charged' || status === 'success') {
+        return 'charged';
+    }
+    
+    if (status === 'approved') {
+        return 'approved';
+    }
+    
+    // Check response message for specific patterns
+    // Charged/Success responses
+    const chargedKeywords = [
+        'thank you', 'payment successful', 'transaction approved', 'charge created',
+        'payment processed', 'completed', 'charged', 'payment charged', 'success'
+    ];
+    
+    if (chargedKeywords.some(keyword => message.includes(keyword))) {
+        return 'charged';
+    }
+    
+    // Live card indicators (CVV errors, insufficient funds, etc.)
+    const approvedKeywords = [
+        'insufficient_funds', 'insufficient funds',
+        'incorrect_cvv', 'invalid_cvv', 'security code is incorrect',
+        'incorrect_cvc', 'invalid_cvc', 'cvc is incorrect', 'cvv',
+        'incorrect_zip', 'postal code', 'zip code',
+        'expired', 'card_expired', 'expiry'
+    ];
+    
+    if (approvedKeywords.some(keyword => message.includes(keyword))) {
+        return 'approved';
+    }
+    
+    // 3D Secure
+    const threedKeywords = [
+        '3d', '3ds', 'three-d', 'authentication', 'verify', 'redirect'
+    ];
+    
+    if (threedKeywords.some(keyword => message.includes(keyword))) {
+        return 'threed';
+    }
+    
+    // Everything else is declined
+    return 'declined';
+}
+
+// Updated addResult function to show more details
+function addResultNew(cc, response, category, status, isSuccess) {
+    // Determine which container based on success
+    let containerId;
+    if (category === 'approved' || category === 'charged' || category === 'threed') {
+        containerId = 'approvedResults';
+    } else {
+        containerId = 'declinedResults';
+    }
+    
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const div = document.createElement('div');
+    div.className = `result-item result-${category}`;
+    
+    const emoji = getEmojiForCategory(category);
+    const categoryText = category.toUpperCase();
+    const statusText = status ? ` (${status})` : '';
+    
+    div.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <span>${emoji}</span>
+            <span>${cc}</span>
+            <span style="font-size: 0.8em; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">
+                ${categoryText}${statusText}
+            </span>
+        </div>
+        <div style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4;">
+            <div style="margin-bottom: 4px;"><strong>Response:</strong> ${response}</div>
+            <div style="margin-bottom: 4px;"><strong>Gateway:</strong> Auto Shopify</div>
+            <div><strong>Time:</strong> ${new Date().toLocaleString()}</div>
+        </div>
+    `;
+    
+    container.appendChild(div);
+    
+    // Add to approved cards if it's a success
+    if (isSuccess) {
+        approvedCards.push({
+            cc: cc,
+            category: category,
+            response: response,
+            status: status,
+            time: new Date().toLocaleString()
+        });
+    }
+}
+
+// Helper function to get emoji for category
+function getEmojiForCategory(category) {
+    switch (category) {
+        case 'charged': return '💳';
+        case 'approved': return '✅';
+        case 'threed': return '🔒';
+        case 'declined': return '❌';
+        default: return '❓';
+    }
+}
+
+// Update the stats to include 3D secure
+function updateAllStats() {
+    document.getElementById('totalStat').textContent = stats.total;
+    document.getElementById('approvedStat').textContent = stats.approved;
+    document.getElementById('chargedStat').textContent = stats.charged;
+    document.getElementById('declinedStat').textContent = stats.declined;
+    document.getElementById('errorStat').textContent = stats.errors;
+    
+    // Calculate success rate (approved + charged + threed)
+    const successCount = stats.approved + stats.charged + (stats.threed || 0);
+    const successRate = stats.total > 0 ? (successCount / stats.total * 100).toFixed(1) : 0;
+    document.getElementById('rateStat').textContent = successRate + '%';
+    
+    document.getElementById('approvedCount').textContent = successCount;
+    document.getElementById('declinedCount').textContent = stats.declined + stats.errors;
+}
+
+// Initialize threed stat if not exists
+if (!stats.threed) {
+    stats.threed = 0;
+}
     // Log result
-    const emoji = category === 'charged' ? '💳' : (isSuccess ? '✅' : '❌');
+    const emoji = getEmojiForCategory(category)
     const categoryText = category.toUpperCase();
     addTerminalMessage(`${emoji} ${categoryText}: ${cc} - ${responseMessage}`, 
                       isSuccess ? 'success' : 'error');
@@ -214,8 +379,6 @@ function processApiResponse(cc, result) {
     
     // Send Telegram notification for approved cards
     if (isSuccess && botToken && chatId) {
-        // Update the processCreditCards function
-async function processCreditCards(ccList) {
     for (let i = 0; i < ccList.length && isProcessing; i++) {
         const cc = ccList[i].trim();
         if (!cc) continue;
