@@ -196,9 +196,20 @@ function getCategoryFromResponse(response) {
     'thank you', 'payment successful'
   ];
   
+  const approvalKeywords = [
+        'success', 'approved', 'succeeded', 'thank you', 'payment successful',
+        'transaction approved', 'charge created', 'payment processed', 'completed'
+    ];
+    const declineKeywords = [
+        'declined', 'failed', 'error', 'invalid', 'insufficient funds',
+        'expired', 'blocked', 'denied', 'rejected', 'card_declined', 'incorrect_cvv', 'incorrect',
+        'security code', "Your card's security code is incorrect"
+    ];
   if (chargedKeywords.some(keyword => responseText.includes(keyword))) {
     return 'charged';
-  }
-  
-  return 'approved';
+  } else if (approvalKeywords.some(keyword => responseLower.includes(keyword))) {
+        return 'approved';
+    } else if (declineKeywords.some(keyword => responseLower.includes(keyword))) {
+        return 'decline';
+    }
 }
