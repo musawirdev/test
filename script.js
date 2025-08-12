@@ -193,7 +193,7 @@ async function processCreditCards(ccList) {
 // Just keep the processApiResponse function as is, but remove any client-side Telegram calls
 function processApiResponse(cc, result) {
     stats.total++;
-    const responseMessage = result.status;
+    const responseMessage = result.response;
     const responseLower = responseMessage.toLowerCase();
     
     // Enhanced approval detection
