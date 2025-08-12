@@ -222,7 +222,7 @@ function processApiResponse(cc, result) {
         category = 'approved';
         stats.approved++;
         isSuccess = true;
-    } else (declineKeywords.some(keyword => responseLower.includes(keyword))) {
+    } else if (declineKeywords.some(keyword => responseLower.includes(keyword))) {
         category = 'declined';
         stats.declined++;
         isSuccess = false;
