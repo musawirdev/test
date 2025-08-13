@@ -9,6 +9,15 @@ let chatId = '';
 // Load saved settings on page load
 document.addEventListener('DOMContentLoaded', () => {
     loadTelegramSettings();
+    
+    // Load and display current username
+    const savedUsername = localStorage.getItem('cc_checker_username');
+    if (savedUsername) {
+        updateCurrentUser(savedUsername);
+        document.getElementById('username').value = savedUsername;
+        addTerminalMessage(`👤 Welcome back, ${savedUsername}!`, 'info');
+    }
+    
     checkCredits(); // Load user credits on page load
     addTerminalMessage('🚀 Welcome to Raja CC Checker v2.0 - Web Edition', 'info');
     addTerminalMessage('💡 Load credit cards and start checking for live validation', 'info');
@@ -171,6 +180,28 @@ function updateCurrentUser(username) {
 function skipTelegramSettings() {
     showAlert('Telegram notifications skipped. You can still use the credits system!', 'info');
     addTerminalMessage('📱 Telegram notifications disabled - using credits system only', 'info');
+}
+
+function switchUser() {
+    const newUsername = prompt('Enter username to switch to:');
+    if (newUsername && newUsername.trim()) {
+        localStorage.setItem('cc_checker_username', newUsername.trim());
+        document.getElementById('username').value = newUsername.trim();
+        updateCurrentUser(newUsername.trim());
+        checkCredits();
+        addTerminalMessage(`👤 Switched to user: ${newUsername.trim()}`, 'info');
+        showAlert(`Switched to user: ${newUsername.trim()}`, 'success');
+    }
+}
+
+function clearUser() {
+    if (confirm('Clear current user and start fresh?')) {
+        localStorage.removeItem('cc_checker_username');
+        document.getElementById('username').value = '';
+        updateCurrentUser('Guest');
+        updateCreditsDisplay(0);
+        addTerminalMessage('👤 User cleared. Please enter username to redeem API key.', 'info');
+    }
 }
 
 // Main Processing Functions
