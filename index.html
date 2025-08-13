@@ -317,10 +317,17 @@
                 <h3><i class="fas fa-coins"></i> Credits System</h3>
                 <div class="telegram-grid">
                     <div class="input-group">
+                        <label><i class="fas fa-user"></i> Username</label>
+                        <input type="text" id="username" placeholder="Enter your username (for tracking)">
+                        <small class="status-text">This helps us track who redeemed the API key</small>
+                    </div>
+                    <div class="input-group">
                         <label><i class="fas fa-key"></i> API Key</label>
                         <input type="text" id="apiKey" placeholder="Enter your purchased API key">
-                        <small class="status-text">Purchase API keys from @YourTelegramBot</small>
+                        <small class="status-text">Contact admin to purchase API keys</small>
                     </div>
+                </div>
+                <div class="telegram-grid">
                     <div class="input-group">
                         <label><i class="fas fa-wallet"></i> Credits Balance</label>
                         <div class="credits-display">
@@ -328,6 +335,13 @@
                             <span class="stat-label">Available Credits</span>
                         </div>
                         <small class="status-text">1 credit = 1 CC check</small>
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-info-circle"></i> Session Info</label>
+                        <div class="credits-display">
+                            <span id="currentUser" class="stat-number" style="color: var(--success); font-size: 1.2rem;">Guest</span>
+                            <span class="stat-label">Current User</span>
+                        </div>
                     </div>
                 </div>
                 <div class="btn-group">
@@ -341,20 +355,23 @@
             </div>
         </div>
 
-        <!-- Telegram Settings -->
+        <!-- Telegram Settings (Optional) -->
         <div class="telegram-section">
             <div class="card">
-                <h3><i class="fab fa-telegram"></i> Telegram Notifications</h3>
+                <h3><i class="fab fa-telegram"></i> Telegram Notifications (Optional)</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                    <i class="fas fa-info-circle"></i> Optional: Set up to receive personal notifications for approved cards
+                </p>
                 <div class="telegram-grid">
                     <div class="input-group">
-                        <label><i class="fas fa-robot"></i> Bot Token</label>
-                        <input type="password" id="botToken" placeholder="Enter your bot token">
-                        <small class="status-text">Get from @BotFather on Telegram</small>
+                        <label><i class="fas fa-robot"></i> Bot Token (Optional)</label>
+                        <input type="password" id="botToken" placeholder="Enter your bot token (optional)">
+                        <small class="status-text">Get from @BotFather on Telegram - Leave empty to skip</small>
                     </div>
                     <div class="input-group">
-                        <label><i class="fas fa-id-card"></i> Chat ID</label>
-                        <input type="text" id="chatId" placeholder="Enter your chat ID">
-                        <small class="status-text">Get from @userinfobot on Telegram</small>
+                        <label><i class="fas fa-id-card"></i> Chat ID (Optional)</label>
+                        <input type="text" id="chatId" placeholder="Enter your chat ID (optional)">
+                        <small class="status-text">Get from @userinfobot on Telegram - Leave empty to skip</small>
                     </div>
                 </div>
                 <div class="btn-group">
@@ -363,6 +380,9 @@
                     </button>
                     <button class="btn btn-secondary" onclick="testTelegramConnection()">
                         <i class="fas fa-paper-plane"></i> Test Connection
+                    </button>
+                    <button class="btn btn-secondary" onclick="skipTelegramSettings()">
+                        <i class="fas fa-forward"></i> Skip This Step
                     </button>
                 </div>
             </div>

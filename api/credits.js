@@ -52,10 +52,10 @@ async function handleRedeemKey(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { apiKey, chatId } = req.body;
+  const { apiKey, username, chatId } = req.body;
 
-  if (!apiKey || !chatId) {
-    return res.status(400).json({ error: 'API key and chat ID required' });
+  if (!apiKey || !username) {
+    return res.status(400).json({ error: 'API key and username required' });
   }
 
   // Check if API key exists and is valid
@@ -69,42 +69,52 @@ async function handleRedeemKey(req, res) {
     return res.status(400).json({ error: 'API key has been deactivated' });
   }
 
-  if (keyData.usedBy && keyData.usedBy !== chatId) {
+  if (keyData.usedBy && keyData.usedBy !== username) {
     return res.status(400).json({ error: 'API key already used by another user' });
   }
 
+  // Use username as primary identifier, chatId as secondary
+  const userId = username;
+  
   // Add credits to user
-  if (!userCredits[chatId]) {
-    userCredits[chatId] = 0;
+  if (!userCredits[userId]) {
+    userCredits[userId] = 0;
   }
 
   // If first time using this key
   if (!keyData.usedBy) {
-    userCredits[chatId] += keyData.credits;
-    keyData.usedBy = chatId;
+    userCredits[userId] += keyData.credits;
+    keyData.usedBy = username;
+    keyData.chatId = chatId || null;
     keyData.redeemedAt = new Date().toISOString();
+    
+    // Send notification to admin about API key redemption
+    await sendAdminNotification(apiKey, username, keyData.credits);
   }
 
   return res.status(200).json({
     success: true,
     creditsAdded: keyData.credits,
-    totalCredits: userCredits[chatId],
+    totalCredits: userCredits[userId],
     message: `Successfully redeemed ${keyData.credits} credits!`
   });
 }
 
 // Check user credits
 async function handleCheckCredits(req, res) {
-  const { chatId } = req.query;
+  const { chatId, username } = req.query;
 
-  if (!chatId) {
-    return res.status(400).json({ error: 'Chat ID required' });
+  // Use username if provided, otherwise fallback to chatId
+  const userId = username || chatId;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'Username or Chat ID required' });
   }
 
-  const credits = userCredits[chatId] || 0;
+  const credits = userCredits[userId] || 0;
 
   return res.status(200).json({
-    chatId,
+    userId,
     credits,
     hasCredits: credits > 0
   });
@@ -185,6 +195,44 @@ function generateApiKey() {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substring(2);
   return `${prefix}_${timestamp}_${random}`.toUpperCase();
+}
+
+// Send notification to admin about API key redemption
+async function sendAdminNotification(apiKey, username, credits) {
+  try {
+    const ADMIN_BOT_TOKEN = process.env.SERVER_BOT_TOKEN;
+    const ADMIN_CHAT_ID = process.env.SERVER_CHAT_ID;
+
+    if (!ADMIN_BOT_TOKEN || !ADMIN_CHAT_ID) {
+      console.log('Admin notification skipped - no admin bot token/chat ID configured');
+      return;
+    }
+
+    const message = `🎯 **NEW API KEY REDEEMED**\n\n` +
+      `👤 **User:** ${username}\n` +
+      `🔑 **API Key:** \`${apiKey}\`\n` +
+      `💰 **Credits:** ${credits}\n` +
+      `⏰ **Time:** ${new Date().toLocaleString()}\n\n` +
+      `💡 **DarkBoy Credits System**`;
+
+    const response = await fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: ADMIN_CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    });
+
+    if (response.ok) {
+      console.log('✅ Admin notification sent successfully');
+    } else {
+      console.log('❌ Admin notification failed');
+    }
+  } catch (error) {
+    console.error('Admin notification error:', error);
+  }
 }
 
 // Export helper functions for use in other API routes
