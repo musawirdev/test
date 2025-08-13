@@ -47,8 +47,8 @@ export default async function handler(req, res) {
       try {
         const baseUrl = req.headers.host?.includes('localhost') ? 'http://localhost:3000' : 'https://' + req.headers.host;
         const creditsUrl = requestUsername ? 
-          `${baseUrl}/api/credits?action=check&username=${requestUsername}` :
-          `${baseUrl}/api/credits?action=check&chatId=${userChatId}`;
+          `${baseUrl}/api/c?action=check&username=${requestUsername}` :
+          `${baseUrl}/api/c?action=check&chatId=${userChatId}`;
           
         const creditsResponse = await fetch(creditsUrl);
         const creditsData = await creditsResponse.json();
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         }
 
         // Deduct 1 credit for this check
-        const deductResponse = await fetch(`${baseUrl}/api/credits?action=deduct`, {
+        const deductResponse = await fetch(`${baseUrl}/api/c?action=deduct`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
