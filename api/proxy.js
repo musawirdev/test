@@ -29,10 +29,18 @@ export default async function handler(req, res) {
       });
     }
 
-    // Check and deduct credits if chatId is provided
-    if (userChatId) {
+    // Check and deduct credits (from body - username or chatId)
+    const { username: requestUsername } = body;
+    const userId = requestUsername || userChatId;
+    
+    if (userId && userId !== 'no-telegram') {
       try {
-        const creditsResponse = await fetch(`${req.headers.host?.includes('localhost') ? 'http://localhost:3000' : 'https://' + req.headers.host}/api/credits?action=check&chatId=${userChatId}`);
+        const baseUrl = req.headers.host?.includes('localhost') ? 'http://localhost:3000' : 'https://' + req.headers.host;
+        const creditsUrl = requestUsername ? 
+          `${baseUrl}/api/credits?action=check&username=${requestUsername}` :
+          `${baseUrl}/api/credits?action=check&chatId=${userChatId}`;
+          
+        const creditsResponse = await fetch(creditsUrl);
         const creditsData = await creditsResponse.json();
         
         if (!creditsData.hasCredits) {
@@ -43,10 +51,14 @@ export default async function handler(req, res) {
         }
 
         // Deduct 1 credit for this check
-        const deductResponse = await fetch(`${req.headers.host?.includes('localhost') ? 'http://localhost:3000' : 'https://' + req.headers.host}/api/credits?action=deduct`, {
+        const deductResponse = await fetch(`${baseUrl}/api/credits?action=deduct`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chatId: userChatId, amount: 1 })
+          body: JSON.stringify({ 
+            username: requestUsername,
+            chatId: userChatId, 
+            amount: 1 
+          })
         });
 
         const deductData = await deductResponse.json();
@@ -57,7 +69,7 @@ export default async function handler(req, res) {
           });
         }
 
-        console.log(`💳 Deducted 1 credit from user ${userChatId}. Remaining: ${deductData.remainingCredits}`);
+        console.log(`💳 Deducted 1 credit from user ${userId}. Remaining: ${deductData.remainingCredits}`);
       } catch (creditsError) {
         console.error('Credits check failed:', creditsError);
         // Continue without credits check if system is down
