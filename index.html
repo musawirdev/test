@@ -268,6 +268,28 @@
             margin-top: 10px;
         }
         
+        .credits-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            background: var(--bg-dark);
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+        
+        .credits-display .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .credits-display .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
         @media (max-width: 768px) {
             .main-grid {
                 grid-template-columns: 1fr;
@@ -287,6 +309,36 @@
         <div class="header">
             <h1><i class="fas fa-rocket"></i> DarkBoy CC Checker v2.0</h1>
             <p>Professional Credit Card Validation Tool - Web Edition</p>
+        </div>
+
+        <!-- Credits System -->
+        <div class="telegram-section">
+            <div class="card">
+                <h3><i class="fas fa-coins"></i> Credits System</h3>
+                <div class="telegram-grid">
+                    <div class="input-group">
+                        <label><i class="fas fa-key"></i> API Key</label>
+                        <input type="text" id="apiKey" placeholder="Enter your purchased API key">
+                        <small class="status-text">Purchase API keys from @YourTelegramBot</small>
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-wallet"></i> Credits Balance</label>
+                        <div class="credits-display">
+                            <span id="creditsBalance" class="stat-number" style="color: var(--primary-color);">0</span>
+                            <span class="stat-label">Available Credits</span>
+                        </div>
+                        <small class="status-text">1 credit = 1 CC check</small>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="redeemApiKey()">
+                        <i class="fas fa-gift"></i> Redeem API Key
+                    </button>
+                    <button class="btn btn-secondary" onclick="checkCredits()">
+                        <i class="fas fa-sync"></i> Refresh Balance
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Telegram Settings -->

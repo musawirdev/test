@@ -29,6 +29,41 @@ export default async function handler(req, res) {
       });
     }
 
+    // Check and deduct credits if chatId is provided
+    if (userChatId) {
+      try {
+        const creditsResponse = await fetch(`${req.headers.host?.includes('localhost') ? 'http://localhost:3000' : 'https://' + req.headers.host}/api/credits?action=check&chatId=${userChatId}`);
+        const creditsData = await creditsResponse.json();
+        
+        if (!creditsData.hasCredits) {
+          return res.status(402).json({ 
+            error: 'No credits available. Please purchase credits to continue.',
+            currentCredits: creditsData.credits || 0
+          });
+        }
+
+        // Deduct 1 credit for this check
+        const deductResponse = await fetch(`${req.headers.host?.includes('localhost') ? 'http://localhost:3000' : 'https://' + req.headers.host}/api/credits?action=deduct`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatId: userChatId, amount: 1 })
+        });
+
+        const deductData = await deductResponse.json();
+        if (!deductData.success) {
+          return res.status(402).json({ 
+            error: 'Failed to deduct credits',
+            details: deductData.error
+          });
+        }
+
+        console.log(`💳 Deducted 1 credit from user ${userChatId}. Remaining: ${deductData.remainingCredits}`);
+      } catch (creditsError) {
+        console.error('Credits check failed:', creditsError);
+        // Continue without credits check if system is down
+      }
+    }
+
     if (!cc.match(/^\d{13,19}\|\d{1,2}\|\d{2,4}\|\d{3,4}$/)) {
       return res.status(400).json({ 
         error: 'Invalid credit card format. Use: NUMBER|MM|YYYY|CVV'

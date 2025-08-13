@@ -9,8 +9,10 @@ let chatId = '';
 // Load saved settings on page load
 document.addEventListener('DOMContentLoaded', () => {
     loadTelegramSettings();
+    checkCredits(); // Load user credits on page load
     addTerminalMessage('🚀 Welcome to DarkBoy CC Checker v2.0 - Web Edition', 'info');
     addTerminalMessage('💡 Load credit cards and start checking for live validation', 'info');
+    addTerminalMessage('💰 Purchase API keys to get credits for CC checking', 'info');
 });
 
 // Telegram Settings Functions
@@ -82,6 +84,71 @@ async function testTelegramConnection() {
     }
 }
 
+// Credits System Functions
+async function redeemApiKey() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const currentChatId = chatId || document.getElementById('chatId').value.trim();
+    
+    if (!apiKey) {
+        showAlert('Please enter an API key', 'error');
+        return;
+    }
+    
+    if (!currentChatId) {
+        showAlert('Please set your Chat ID first in Telegram settings', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/credits?action=redeem', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                apiKey: apiKey,
+                chatId: currentChatId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('apiKey').value = ''; // Clear the input
+            updateCreditsDisplay(result.totalCredits);
+            showAlert(result.message, 'success');
+            addTerminalMessage(`💰 Successfully redeemed ${result.creditsAdded} credits!`, 'success');
+        } else {
+            showAlert(result.error, 'error');
+        }
+    } catch (error) {
+        showAlert(`Failed to redeem API key: ${error.message}`, 'error');
+    }
+}
+
+async function checkCredits() {
+    const currentChatId = chatId || document.getElementById('chatId').value.trim();
+    
+    if (!currentChatId) {
+        updateCreditsDisplay(0);
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/credits?action=check&chatId=${currentChatId}`);
+        const result = await response.json();
+        
+        updateCreditsDisplay(result.credits || 0);
+    } catch (error) {
+        console.error('Failed to check credits:', error);
+        updateCreditsDisplay(0);
+    }
+}
+
+function updateCreditsDisplay(credits) {
+    document.getElementById('creditsBalance').textContent = credits;
+}
+
 // Main Processing Functions
 async function startProcessing() {
     const ccInput = document.getElementById('ccInput').value.trim();
@@ -90,6 +157,27 @@ async function startProcessing() {
     if (ccList.length === 0) {
         showAlert('Please enter credit cards to check', 'error');
         return;
+    }
+    
+    // Check if user has enough credits
+    const currentChatId = chatId || document.getElementById('chatId').value.trim();
+    if (currentChatId) {
+        try {
+            const response = await fetch(`/api/credits?action=check&chatId=${currentChatId}`);
+            const result = await response.json();
+            
+            if (result.credits < ccList.length) {
+                showAlert(`Insufficient credits! You need ${ccList.length} credits but only have ${result.credits}. Please purchase more credits.`, 'error');
+                return;
+            }
+            
+            addTerminalMessage(`💰 Credits check passed. You have ${result.credits} credits available.`, 'success');
+        } catch (error) {
+            console.error('Credits check failed:', error);
+            addTerminalMessage('⚠️ Could not verify credits. Proceeding anyway...', 'warning');
+        }
+    } else {
+        addTerminalMessage('⚠️ No Chat ID set. Credits system disabled.', 'warning');
     }
     
     isProcessing = true;
@@ -177,6 +265,11 @@ async function processCreditCards(ccList) {
         }
         
         updateAllStats();
+        
+        // Update credits display after each check
+        if (userChatId) {
+            checkCredits();
+        }
         
         // Delay between requests
         if (isProcessing) {
