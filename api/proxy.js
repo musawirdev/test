@@ -14,6 +14,9 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('🔍 Raw request body type:', typeof req.body);
+    console.log('🔍 Raw request body:', req.body);
+    
     let body;
     if (typeof req.body === 'string') {
       body = JSON.parse(req.body);
@@ -21,7 +24,17 @@ export default async function handler(req, res) {
       body = req.body;
     }
 
-    const { cc, site, userBotToken, userChatId } = body;
+    console.log('🔍 Parsed body:', body);
+
+    const { cc, site, username: requestUsername, userBotToken, userChatId } = body;
+
+    console.log('📝 Extracted parameters:', { 
+      cc: cc ? cc.substring(0, 4) + '****' : 'MISSING', 
+      site, 
+      username: requestUsername, 
+      userBotToken: userBotToken ? 'PRESENT' : 'MISSING', 
+      userChatId 
+    });
 
     if (!cc || !site) {
       return res.status(400).json({ 
@@ -30,7 +43,6 @@ export default async function handler(req, res) {
     }
 
     // Check and deduct credits (from body - username or chatId)
-    const { username: requestUsername } = body;
     const userId = requestUsername || userChatId;
     
     if (userId && userId !== 'no-telegram') {
