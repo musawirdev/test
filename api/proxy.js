@@ -26,19 +26,22 @@ export default async function handler(req, res) {
 
     console.log('🔍 Parsed body:', body);
 
-    const { cc, site, username: requestUsername, userBotToken, userChatId } = body;
+    const { cc, username: requestUsername, userBotToken, userChatId } = body;
+    
+    // Set default site since it's not being sent from frontend
+    const site = 'buildersdiscountwarehouse.com';
 
     console.log('📝 Extracted parameters:', { 
       cc: cc ? cc.substring(0, 4) + '****' : 'MISSING', 
-      site, 
+      site: site, 
       username: requestUsername, 
       userBotToken: userBotToken ? 'PRESENT' : 'MISSING', 
       userChatId 
     });
 
-    if (!cc || !site) {
+    if (!cc) {
       return res.status(400).json({ 
-        error: 'Missing required parameters: cc and site'
+        error: 'Missing required parameter: cc'
       });
     }
 
