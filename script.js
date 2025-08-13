@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCurrentUser(savedUsername);
         document.getElementById('username').value = savedUsername;
         addTerminalMessage(`👤 Welcome back, ${savedUsername}!`, 'info');
+    } else {
+        updateCurrentUser('Guest');
     }
     
     checkCredits(); // Load user credits on page load
@@ -182,27 +184,7 @@ function skipTelegramSettings() {
     addTerminalMessage('📱 Telegram notifications disabled - using credits system only', 'info');
 }
 
-function switchUser() {
-    const newUsername = prompt('Enter username to switch to:');
-    if (newUsername && newUsername.trim()) {
-        localStorage.setItem('cc_checker_username', newUsername.trim());
-        document.getElementById('username').value = newUsername.trim();
-        updateCurrentUser(newUsername.trim());
-        checkCredits();
-        addTerminalMessage(`👤 Switched to user: ${newUsername.trim()}`, 'info');
-        showAlert(`Switched to user: ${newUsername.trim()}`, 'success');
-    }
-}
-
-function clearUser() {
-    if (confirm('Clear current user and start fresh?')) {
-        localStorage.removeItem('cc_checker_username');
-        document.getElementById('username').value = '';
-        updateCurrentUser('Guest');
-        updateCreditsDisplay(0);
-        addTerminalMessage('👤 User cleared. Please enter username to redeem API key.', 'info');
-    }
-}
+// User switching functions removed for security
 
 // Main Processing Functions
 async function startProcessing() {

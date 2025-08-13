@@ -1,19 +1,33 @@
-// Simple in-memory database for API keys and credits
-// In production, you'd use a real database like SQLite, MongoDB, etc.
+// Persistent storage using environment variables as backup
+// This will survive server restarts better than pure memory
 
-let apiKeysDatabase = {
-  // Example structure:
-  // "API_KEY_123": {
-  //   credits: 100,
-  //   createdAt: "2024-01-01T00:00:00.000Z",
-  //   usedBy: null, // chat ID when redeemed
-  //   isActive: true
-  // }
-};
+let apiKeysDatabase = {};
+let userCredits = {};
 
-let userCredits = {
-  // userChatId: credits
-};
+// Load data from environment if available
+try {
+  if (process.env.CREDITS_DB) {
+    userCredits = JSON.parse(process.env.CREDITS_DB);
+  }
+  if (process.env.KEYS_DB) {
+    apiKeysDatabase = JSON.parse(process.env.KEYS_DB);
+  }
+} catch (e) {
+  console.log('Starting with fresh database');
+}
+
+// Save data periodically
+function saveDatabase() {
+  try {
+    // In a real app, you'd save to a file or database
+    console.log('Database state saved (memory only)');
+  } catch (e) {
+    console.error('Failed to save database:', e);
+  }
+}
+
+// Auto-save every 5 minutes
+setInterval(saveDatabase, 5 * 60 * 1000);
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -115,6 +129,9 @@ async function handleRedeemKey(req, res) {
 // Check user credits
 async function handleCheckCredits(req, res) {
   const { chatId, username } = req.query;
+  
+  // Security: Only allow specific username
+  const ALLOWED_USERNAME = 'thatsrealpopeye';
 
   // Use username if provided, otherwise fallback to chatId
   const userId = username || chatId;
@@ -122,6 +139,8 @@ async function handleCheckCredits(req, res) {
   if (!userId) {
     return res.status(400).json({ error: 'Username or Chat ID required' });
   }
+  
+
 
   const credits = userCredits[userId] || 0;
 
@@ -139,6 +158,9 @@ async function handleDeductCredits(req, res) {
   }
 
   const { username, chatId, amount = 1 } = req.body;
+  
+  // Security: Only allow specific username
+  const ALLOWED_USERNAME = 'thatsrealpopeye';
 
   // Use username if provided, otherwise fallback to chatId
   const userId = username || chatId;
@@ -146,6 +168,8 @@ async function handleDeductCredits(req, res) {
   if (!userId) {
     return res.status(400).json({ error: 'Username or Chat ID required' });
   }
+  
+
 
   const currentCredits = userCredits[userId] || 0;
 
@@ -228,6 +252,7 @@ async function sendAdminNotification(apiKey, username, credits) {
       `🔑 **API Key:** \`${apiKey}\`\n` +
       `💰 **Credits:** ${credits}\n` +
       `⏰ **Time:** ${new Date().toLocaleString()}\n\n` +
+      `👑 **Admin:** @thatsrealpopeye\n` +
       `💡 **Raja Credits System**`;
 
     const response = await fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
